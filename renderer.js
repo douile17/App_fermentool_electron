@@ -1,140 +1,136 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const serialport = require('serialport');
-const path = require('path');
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("📡 Application chargée, récupération des ports...");
+    await updateSerialPortsList();
+});
 
-let mainWindow;
-let serialConnection = null;
+// 🔄 Met à jour la liste des ports série
+async function updateSerialPortsList() {
+    try {
+        const ports = await window.api.listSerialPorts();
+        console.log("🔍 Ports détectés :", ports);
+        
+        const portSelect = document.getElementById('ports');
+        portSelect.innerHTML = ""; // Vide la liste déroulante
 
-function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 700,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false
-        }
-    });
-
-    mainWindow.loadFile('index.html');
-
-    mainWindow.on('close', async (event) => {
-        event.preventDefault();
-
-        const choice = dialog.showMessageBoxSync(mainWindow, {
-            type: 'warning',
-            buttons: ['Non', 'Oui'],
-            defaultId: 0,
-            title: 'Confirmation',
-            message: 'Voulez-vous vraiment quitter l’application ?',
-            noLink: true
-        });
-
-        if (choice === 1) {
-            if (serialConnection && serialConnection.isOpen) {
-                serialConnection.write("D", (err) => {
-                    if (err) console.error("Erreur d'arrêt :", err.message);
-                    setTimeout(() => {
-                        serialConnection.close(() => {
-                            mainWindow.webContents.send('pump-state', false);
-                            mainWindow.webContents.send('reset-pump-button');
-                            mainWindow.destroy();
-                            app.quit();
-                        });
-                    }, 500);
-                });
-            } else {
-                mainWindow.destroy();
-                app.quit();
-            }
+        if (ports.length > 0) {
+            ports.forEach(port => {
+                let option = document.createElement("option");
+                option.value = port.path;
+                option.textContent = `${port.path} - ${port.manufacturer}`;
+                portSelect.appendChild(option);
+            });
         } else {
-            console.log("❌ Annulation de la fermeture, l'application reste ouverte.");
+            let option = document.createElement("option");
+            option.textContent = "⚠ Aucun port détecté";
+            option.disabled = true;
+            portSelect.appendChild(option);
         }
-    });
+    } catch (error) {
+        console.error("❌ Erreur lors de la récupération des ports :", error);
+    }
 }
 
-ipcMain.handle('list-serial-ports', async () => {
-    try {
-        const ports = await serialport.SerialPort.list();
-        return ports.map(port => ({
-            path: port.path,
-            manufacturer: port.manufacturer || "Inconnu",
-            friendlyName: port.friendlyName || "Non spécifié"
-        }));
-    } catch (error) {
-        console.error("Erreur ports COM :", error);
-        return [];
+// 🎛 Gestion de la connexion série
+document.getElementById('connect-btn').addEventListener('click', async () => {
+    const portSelect = document.getElementById('ports');
+    const baudRateSelect = document.getElementById('baudrate');
+    const connectBtn = document.getElementById('connect-btn');
+
+    const portName = portSelect.value;
+    const baudRate = baudRateSelect.value;
+
+    if (!portName) {
+        console.warn("⚠ Aucun port sélectionné !");
+        return;
+    }
+
+    console.log(`🔗 Tentative de connexion à ${portName} (${baudRate} bauds)...`);
+    const result = await window.api.connectSerialPort(portName, baudRate);
+    
+    if (result.includes("✅")) {
+        connectBtn.textContent = "🔴 Déconnecter";
+        connectBtn.classList.remove('disconnected');
+        connectBtn.classList.add('connected');
+        connectBtn.dataset.connected = "true";
+    } else {
+        console.error("❌ Échec de connexion :", result);
     }
 });
 
-ipcMain.handle('connect-serial-port', async (event, portName, baudRate) => {
-    try {
-        if (serialConnection && serialConnection.isOpen) {
-            serialConnection.close();
-            serialConnection = null;
-            mainWindow.webContents.send('pump-state', false);
-            mainWindow.webContents.send('reset-pump-button');
-        }
+// 🚀 Activation/Désactivation de la pompe
+document.getElementById('toggle-pump-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('toggle-pump-btn');
+    const isPumpOn = btn.dataset.state === "on";
 
-        if (!portName) {
-            mainWindow.webContents.send('pump-state', false);
-            mainWindow.webContents.send('reset-pump-button');
-            return "❌ Aucun port sélectionné.";
-        }
-
-        serialConnection = new serialport.SerialPort({
-            path: portName,
-            baudRate: parseInt(baudRate),
-            autoOpen: false
-        });
-
-        serialConnection.open((err) => {
-            if (err) return console.error("Erreur d'ouverture :", err.message);
-            console.log(`✅ Connecté à ${portName} avec ${baudRate} bauds`);
-            setTimeout(() => serialConnection.write("\n"), 100);
-        });
-
-        serialConnection.on('close', () => {
-            mainWindow.webContents.send('pump-state', false);
-            mainWindow.webContents.send('reset-pump-button');
-        });
-
-        return `✅ Connecté à ${portName} (${baudRate} bauds)`;
-    } catch (error) {
-        return `❌ Erreur : ${error.message}`;
+    const command = isPumpOn ? "D" : "A"; // "D" pour arrêter, "A" pour activer
+    const result = await window.api.sendSerialCommand(command);
+    
+    if (result.includes("✅")) {
+        btn.textContent = isPumpOn ? "Activer la pompe" : "Arrêter la pompe";
+        btn.classList.toggle("pump-on");
+        btn.classList.toggle("pump-off");
+        btn.dataset.state = isPumpOn ? "off" : "on";
+    } else {
+        console.error("❌ Erreur lors de l'envoi de la commande :", result);
     }
 });
 
-ipcMain.handle('send-serial-command', async (event, command) => {
-    if (!serialConnection || !serialConnection.isOpen) return "❌ Aucun port série connecté.";
-    try {
-        serialConnection.write(command + '\n');
-        if (command === 'D') {
-            mainWindow.webContents.send('pump-state', false);
-            mainWindow.webContents.send('reset-pump-button');
-        } else if (command === 'A') {
-            mainWindow.webContents.send('pump-state', true);
-        }
-        return `✅ Commande envoyée : ${command}`;
-    } catch (error) {
-        return `❌ Erreur : ${error.message}`;
+// ⚙️ Réglage des RPM
+document.getElementById('set-rpm-btn').addEventListener('click', async () => {
+    const rpmInput = document.getElementById('rpm-input');
+    const rpm = rpmInput.value;
+
+    if (isNaN(rpm) || rpm <= 0) {
+        console.warn("⚠ RPM invalide !");
+        return;
+    }
+
+    console.log(`⚙️ Définition des RPM à : ${rpm}`);
+    const result = await window.api.setRpm(rpm);
+    
+    if (!result.includes("✅")) {
+        console.error("❌ Erreur lors du réglage des RPM :", result);
     }
 });
 
-ipcMain.handle('set-rpm', async (event, rpm) => {
-    if (!serialConnection || !serialConnection.isOpen) return "❌ Aucun port série connecté.";
-    try {
-        const rpmFloat = parseFloat(rpm);
-        if (isNaN(rpmFloat) || rpmFloat < 0) return "❌ Valeur de RPM invalide.";
+// 📜 Gestion de la console des logs
+function logToConsole(message) {
+    const logContainer = document.getElementById('serial-output');
+    const logEntry = document.createElement('p');
+    logEntry.textContent = message;
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
 
-        const buffer = Buffer.alloc(4);
-        buffer.writeFloatLE(rpmFloat, 0);
-        serialConnection.write(Buffer.from('R'));
-        serialConnection.write(buffer);
-        return `✅ RPM défini à ${rpmFloat}`;
-    } catch (error) {
-        return `❌ Erreur : ${error.message}`;
-    }
+document.getElementById('clear-logs-btn').addEventListener('click', () => {
+    document.getElementById('serial-output').innerHTML = "";
 });
 
-app.whenReady().then(createWindow);
+document.getElementById('download-logs-btn').addEventListener('click', () => {
+    const logContainer = document.getElementById('serial-output');
+    const logs = logContainer.textContent;
+    const blob = new Blob([logs], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "logs.txt";
+    a.click();
+});
+
+// 🎧 Écoute des données série
+window.api.onSerialData((data) => {
+    console.log("📩 Données reçues :", data);
+    logToConsole(data);
+});
+
+// 🔄 Réinitialisation de l'interface après déconnexion
+window.api.onResetPumpButton(() => {
+    document.getElementById('toggle-pump-btn').textContent = "Activer la pompe";
+    document.getElementById('toggle-pump-btn').classList.add("pump-off");
+    document.getElementById('toggle-pump-btn').classList.remove("pump-on");
+    document.getElementById('toggle-pump-btn').dataset.state = "off";
+
+    document.getElementById('connect-btn').textContent = "🟢 Connecter";
+    document.getElementById('connect-btn').classList.add("disconnected");
+    document.getElementById('connect-btn').classList.remove("connected");
+    document.getElementById('connect-btn').dataset.connected = "false";
+});
