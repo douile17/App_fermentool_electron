@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrôle Pompe Modbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <h1>💧 Contrôle de la Pompe Modbus</h1>
+
+        <!-- 🎛️ Connexion série (Prend toute la largeur) -->
+        <div class="section full-width">
+            <h2>🔌 Connexion Série</h2>
+            <select id="ports"></select>
+            <select id="baudrate">
+                <option value="9600">9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="57600">57600</option>
+                <option value="115200">115200</option>
+            </select>
+            <button id="connect-btn" class="disconnected">🟢 Connecter</button>
+        </div>
+
+        <!-- 🎛️ Bloc Contrôle Manuel (Activation + RPM côte à côte, même largeur que Connexion Série) -->
+        <div class="section full-width">
+            <div class="control-wrapper">
+                <!-- 🚀 Activation/Désactivation Pompe -->
+                <div class="control-block">
+                    <h2>🚀 Activation Pompe</h2>
+                    <button id="toggle-pump-btn" class="pump-off" disabled>Activer la pompe</button>
+                </div>
+
+                <!-- 🔄 Réglage RPM -->
+                <div class="control-block">
+                    <h2>⚙️ Réglage RPM</h2>
+                    <div class="rpm-control">
+                        <input type="number" id="rpm-input" placeholder="RPM" min="0" max="5000" step="0.1" disabled>
+                        <button id="set-rpm-btn" disabled> Appliquer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📝 Console des logs (Même largeur que Connexion Série) -->
+        <div class="section full-width">
+            <h2>📜 Console</h2>
+            <div id="serial-output"></div>
+            <button id="clear-logs-btn">🗑 Effacer</button>
+            <button id="download-logs-btn">📂 Télécharger</button>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

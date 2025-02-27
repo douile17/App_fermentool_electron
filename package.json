@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "chart.js": "^4.4.8",
+    "electron": "^34.2.0",
+    "serialport": "^13.0.0"
+  },
+  "name": "fermentool_electron_app",
+  "version": "1.0.0",
+  "description": "Software to control everything in a fermentation lab",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrew Zicler",
+  "license": "ISC"
+}

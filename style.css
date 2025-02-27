@@ -1,0 +1,172 @@
+/* 🌍 Global */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+/* 🏆 Titre principal */
+h1 {
+    color: #333;
+}
+
+/* 📦 Sections principales */
+.section {
+    background: white;
+    padding: 20px;
+    margin: 20px auto;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+/* ✅ Ajuste la largeur pour qu'elle soit identique partout */
+.full-width {
+    width: 60%;
+}
+
+/* 🎛️ Conteneur général du contrôle */
+.control-wrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+/* 🟩 Blocs individuels (activation et réglage RPM) */
+.control-block {
+    flex: 1;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 🔄 Alignement du champ RPM */
+.rpm-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* 📏 Ajustement du champ RPM */
+#rpm-input {
+    width: 80px;
+    text-align: center;
+    padding: 5px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* 📝 Console des logs */
+#serial-output {
+    width: 100%;
+    height: 150px;
+    background: #000;
+    color: #0f0;
+    padding: 10px;
+    overflow-y: auto;
+    text-align: left;
+    font-family: "Courier New", monospace;
+    border-radius: 5px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+/* 🔘 Boutons génériques */
+button {
+    font-size: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease-in-out, transform 0.1s;
+}
+
+/* 🟢 Bouton Connecter */
+.disconnected {
+    background: linear-gradient(45deg, #4CAF50, #2E7D32);
+    color: white;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.disconnected:hover {
+    background: linear-gradient(45deg, #2E7D32, #4CAF50);
+    transform: scale(1.05);
+}
+
+/* 🔴 Bouton Déconnecter */
+.connected {
+    background: linear-gradient(45deg, #D9534F, #B71C1C);
+    color: white;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.connected:hover {
+    background: linear-gradient(45deg, #B71C1C, #D9534F);
+    transform: scale(1.05);
+}
+
+/* 🚀 Bouton Activation Pompe */
+#toggle-pump-btn {
+    font-size: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease-in-out, transform 0.1s;
+}
+
+/* 🟢 Pompe désactivée */
+.pump-off {
+    background: linear-gradient(45deg, #4CAF50, #2E7D32);
+    color: white;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pump-off:hover {
+    background: linear-gradient(45deg, #2E7D32, #4CAF50);
+    transform: scale(1.05);
+}
+
+/* 🔴 Pompe activée */
+.pump-on {
+    background: linear-gradient(45deg, #D9534F, #B71C1C);
+    color: white;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pump-on:hover {
+    background: linear-gradient(45deg, #B71C1C, #D9534F);
+    transform: scale(1.05);
+}
+
+/* 📅 Logs formatés */
+#serial-output p {
+    margin: 5px 0;
+    font-size: 12px;
+}
+
+/* 📱 Responsive */
+@media (max-width: 768px) {
+    .full-width {
+        width: 80%;
+    }
+
+    .control-wrapper {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+/* 🔘 Désactivation des boutons */
+button:disabled, .disabled-button {
+    background: #e8e6e6 !important;
+    color: #d1d1d1 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
